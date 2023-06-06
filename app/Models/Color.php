@@ -18,5 +18,3 @@ class Color extends Model
         'LegoExtDesc'
     ];
 }
-
-$Color->save();

@@ -18,20 +18,71 @@ class ColorApiController extends Controller
 
         $response = Http::withOptions(['verify' => false])->get('https://rebrickable.com/api/v3/lego/colors/?key=' . $apiKey);
         $data = json_decode($response);
+        $data = $data->results;
+        echo '<pre>';
+        // print_r($data);
         // dd($data);
-        return view('/colors/index', ['data' => $data->results]);
-
+        // return view('/colors/index', ['data' => $data->results]);
+        $ids = [];
+        $name = [];
+        $rgb = [];
+        $is_trans = [];
+        $brickId = [];
+        $index = 2;
         foreach ($data as $item) {
-            Color::create([
-                'name' => $item['name'],
-                'rgb' => $item['rgb'],
-                'transparency' => $item['transparency'],
-                'brickLinkExtId' => $item['brickLinkExtId'],
-                'brickLinkExtDesc' => $item['brickLinkExtDesc'],
-                'LegokExtId' => $item['LegoExtId'],
-                'LegoExtDesc' => $item['LegoExtDesc'],
-            ]);
+            // $extIds = $item->external_ids->LEGO->ext_ids;
+            // $extIds = $item['external_ids']['BrickLink']['ext_ids'];
+            $item = (array)$item;
+            if ($item['id'] >= 0) {
+                $ids[] = $item['id'];
+                $name[] = $item['name'];
+                $rgb[] = $item['rgb'];
+                $id = (int)$ids;
+                $is_trans[] = $item['is_trans'];
+                // $brickId[] = $item['external_ids']['BrickLink']['ext_ids'];
+                // $brickId[] = $item['external_ids']->BrickLink->ext_ids;
+                // $brickId[] = is_array($item) ? $item['external_ids']['BrickLink']['ext_ids'] : $item->external_ids->BrickLink->ext_ids;
+                // $extIds = $item['external_ids']->BrickLink->ext_ids;
+            }
+            $id = $item['id'];
+            // $brickId[] = $item['$id' + 1]->external_ids;
         }
+        // foreach ($data as $item) {
+        //     $id = is_array($item) ? $item['id'] : $item->id;
+        //     if ($id >= 1) {
+        //         print_r($id);
+        //         $brickLinkIds[] = is_array($item)
+        //             ? $item['external_ids']['BrickLink']['ext_ids']
+        //             : $item->external_ids->BrickLink->ext_ids;
+        //     }
+        // }
+
+        // print_r($ids);
+        // print_r($extIds);
+        // $name = $data[]->exter;
+        $externalIds = $data[$id]->external_ids->BrickLink->ext_ids;
+        $extIds = $data[1]->external_ids->LEGO->ext_ids;
+        $legoDes = $data[1]->external_ids->LEGO->ext_descrs;
+        print_r($externalIds);
+        // print_r($brickId);
+        echo "<pre>";
+        foreach ($data as $item) {
+
+            $item = (array)$item;
+            print_r($item);
+            // $extIds = $data->results[0]->external_ids->BrickOwl->ext_ids;
+
+            // Color::updateOrCreate([
+            //     'name' => $item['name'],
+            //     'rgb' => $item['rgb'],
+            //     'transparency' => $item['is_trans'],
+            //     'brickLinkExtId' => $item['ext_ids'],
+            //     'brickLinkExtDesc' => $item['ext_descrs'],
+            //     'LegokExtId' => $item['ext_ids'],
+            //     'LegoExtDesc' => $item['ext_descrs'],
+            // ]);
+        }
+        dd("data stored");
     }
 
 
