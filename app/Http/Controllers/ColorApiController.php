@@ -9,21 +9,29 @@ use Exception;
 
 class ColorApiController extends Controller
 {
+    // function to perform necessary tasks using lego colors api
     public function index()
     {
+        // api key to access data from api
         $apiKey = '8bb5ff20c88d9f34e0aab9189e3d5bfa';
 
         // $response = Http::withHeaders([
         //     'Authorization' => 'key ' . $apiKey,
         // ])->get('https://rebrickable.com/api/v3/lego/colors');
 
-        $response = Http::withOptions(['verify' => false])->get('https://rebrickable.com/api/v3/lego/colors/?page_size=300&key=' . $apiKey);
+        // declaring a way to fetch the data from api overtaking the verifying of api
+        $response = Http::withOptions(['verify' => false])->get('https://rebrickable.com/api/v3/lego/colors/?page_size=300&ordering=name&key=' . $apiKey);
+
+        // coverting data into json object
         $data = json_decode($response);
+
+        //getting into a property called results to fetch necessary data
         $data = $data->results;
+
+        //printing it
         echo '<pre>';
-        // print_r($data);
-        // dd($data);
-        // return view('/colors/index', ['data' => $data->results]);
+
+        //declaring empty array to store data into it
         $ids = [];
         $name = [];
         $rgb = [];
@@ -31,74 +39,92 @@ class ColorApiController extends Controller
         $brickId = [];
 
 
+        // creating a loop to iteratre through the whole data and get every piece
         foreach ($data as $item) {
+
+            //setting id to 0 instead of -1 so we get data from id 0
             if ($item->id >= 0) {
+                //priting id, name and rgb pattern from the api
                 echo 'ID: ' . $item->id . '<br>';
                 echo 'Name: ' . $item->name . '<br>';
                 echo 'RGB: #' . $item->rgb . '<br>';
 
 
-
+                // adding a styling portion so we can see live example of color itself
                 echo '<div style="width: 100px; height: 100px; background-color:#' . $item->rgb . ';"></div>';
 
+                // checking and making sure if a property called BrickOwl exists or not so we can fetch data from it
                 if (property_exists($item->external_ids, 'BrickOwl')) {
 
+                    // storing data from BrickOwl into a variable
                     $brick_owl = $item->external_ids->BrickOwl;
 
+                    // checking if property called ext_ids exist or not 
                     if (count($brick_owl->ext_ids)) {
+                        // fetching data from ext_ids using a loop and storing it as a key-value pair
                         foreach ($brick_owl->ext_ids as $key => $value) {
+                            // priting id and description
                             echo 'BrickOwl Name: ' . $brick_owl->ext_ids[$key] . ' - ' . $brick_owl->ext_descrs[$key][0] . '<br>';
                         }
                     }
                 } else {
+                    //if there is no data then this message wiill show up
                     echo 'NO BRICKOWL ALTERNATIVE NAME<br>';
                 }
 
+                // checking and making sure if a property called BrickLink exists or not so we can fetch data from it
                 if (property_exists($item->external_ids, 'BrickLink')) {
+                    // storing data from BrickLink into a variable
                     $brick_link = $item->external_ids->BrickLink;
 
+                    // checking if property called ext_ids exist or not
                     if (count($brick_link->ext_ids)) {
+                        // fetching data from ext_ids using a loop and storing it as a key-value pair
                         foreach ($brick_link->ext_ids as $key => $value) {
+                            // priting id and description
                             echo 'BrickLink Name: ' . $brick_link->ext_ids[$key] . '-' . $brick_link->ext_descrs[$key][0] . '<br>';
                         }
                     } else {
+                        //if there is no data then this message wiill show up
                         echo 'NO BRICKLINK ALTEERNATIVE NAME<BR>';
                     }
                 }
 
+                // checking and making sure if a property called LEGO exists or not so we can fetch data from it
                 if (property_exists($item->external_ids, 'LEGO')) {
-
+                    // storing data from LEGO into a variable
                     $lego = $item->external_ids->LEGO;
 
+                    // checking if property called ext_ids exist or not
                     if (count($lego->ext_ids)) {
+                        // fetching data from ext_ids using a loop and storing it as a key-value pair
                         foreach ($lego->ext_ids as $key => $value) {
+                            // priting id and description
                             echo 'LEGO Name: ' . $lego->ext_ids[$key] . ' - ' . $lego->ext_descrs[$key][0] . '<br>';
                         }
                     }
                 } else {
+                    //if there is no data then this message wiill show up
                     echo 'NO LEGO ALTERNATIVE NAME<br>';
                 }
 
                 echo '<hr>';
-                // dd($lego->ext_descrs[1][1]);
-
-                // print_r($lego_desc);
-
-
                 print_r($brick_link);
                 print_r($lego);
 
+                //fetching id of first index of LEGO property 
                 $lego_id =  $lego->ext_ids[0];
+                //fetching description of first index and inside that the first index of LEGO property
                 $lego_desc = $lego->ext_descrs[0][0];
+                // running a condition where if the color description is like ex: "CONDUCT.BLACK" then remove the CONDUCT word and only store the other word
                 if (substr($lego_desc, 0, 7) == 'CONDUCT') {
                     $lego_id =  $lego->ext_ids[1];
                     $lego_desc = $lego->ext_descrs[1][0];
                 }
 
                 print_r($lego_desc);
-                // die();
 
-                // try {
+                // Storing everything into the database
                 Color::updateOrCreate([
                     'name' => $item->name,
                     'rgb' => $item->rgb,
@@ -108,116 +134,12 @@ class ColorApiController extends Controller
                     'LegoExtId' => $lego_id,
                     'LegoExtDesc' => $lego_desc,
                 ]);
-                // } catch (Exception $e) {
-                //     dd($lego);
-                // }
-
-                $ids[] = $item->id;
-                $name[] = $item->name;
-                // print_r($name);
-
             }
-
-            // dd($ids);
-            // $brick_link;
-            // if (property_exists($item->external_ids, 'BrickLink') & property_exists($item->external_ids, 'LEGO')) {
-            //     $brick_link = $item->external_ids->BrickLink;
-            //     $link = $brick_link->ext_ids;
-            //     $desc = $brick_link->ext_descrs[0];
-            //     print_r($link);
-            //     print_r($desc);
-
-            //     $lego = $item->external_ids->LEGO;
-            //     $lid = $lego->ext_ids;
-            //     $ldesc = $lego->ext_descrs[0];
-            //     $ldes = implode(',', $ldesc);
-            //     print_r($lid);
-            //     print_r($ldes);
-
-            // Color::updateOrCreate([
-            //     'name' => $item->name,
-            //     'rgb' => $item->rgb,
-            //     'transparency' => $item->is_trans,
-            //     'brickLinkExtId' => $link,
-            //     'brickLinkExtDesc' => $desc,
-            //     'LegokExtId' => $lid,
-            //     'LegoExtDesc' => $ldes,
-            // ]);
         }
-        die();
-
-
-
-        // Color::updateOrCreate([
-        //     'name' => $item->name,
-        //     'rgb' => $item->rgb,
-        //     'transparency' => $item->is_trans,
-        //     'brickLinkExtId' => $item->external_ids->BrickLink->ext_ids,
-        //     'brickLinkExtDesc' => $item->ext_descrs,
-        //     'LegokExtId' => $item->ext_ids,
-        //     'LegoExtDesc' => $item->ext_descrs,
-        // ]);
-
-
-
-
-        // foreach ($data as $item) {
-        //     // $extIds = $item->external_ids->LEGO->ext_ids;
-
-        //     $item = (array)$item;
-        //     if ($item['id'] >= 0) {
-        //         $ids[] = $item['id'];
-        //         $name[] = $item['name'];
-        //         $rgb[] = $item['rgb'];
-        //         $id = (int)$ids;
-        //         $is_trans[] = $item['is_trans'];
-        //         // $brickId[] = $item['external_ids']['BrickLink']->ext_ids;
-        //         // $brickId[] = $item['external_ids']->BrickLink->ext_ids;
-        //         // $brickId[] = is_array($item) ? $item['external_ids']['BrickLink']['ext_ids'] : $item->external_ids->BrickLink->ext_ids;
-        //         // $extIds = $item['external_ids']->BrickLink->ext_ids;
-        //     }
-        //     $id = $item['id'];
-        //     // $brickId[] = $item['$id' + 1]->external_ids;
-        // }
-        // print_r($name);
-        // foreach ($data as $item) {
-        //     $id = is_array($item) ? $item['id'] : $item->id;
-        //     if ($id >= 1) {
-        //         print_r($id);
-        //         $brickLinkIds[] = is_array($item)
-        //             ? $item['external_ids']['BrickLink']['ext_ids']
-        //             : $item->external_ids->BrickLink->ext_ids;
-        //     }
-        // }
-
-        // print_r($ids);
-        // print_r($brickId);
-        // $name = $data[]->exter;
-        // $externalIds = $data[$id]->external_ids->BrickLink->ext_ids;
-        // $extIds = $data[1]->external_ids->LEGO->ext_ids;
-        // $legoDes = $data[1]->external_ids->LEGO->ext_descrs;
-        // print_r($externalIds);
-        // print_r($brickId);
-        // echo "<pre>";
-        // foreach ($data as $item) {
-
-        //     $item = (array)$item;
-        // print_r($item);
-        // $extIds = $data->results[0]->external_ids->BrickOwl->ext_ids;
-
-        // Color::updateOrCreate([
-        //     'name' => $item['name'],
-        //     'rgb' => $item['rgb'],
-        //     'transparency' => $item['is_trans'],
-        //     'brickLinkExtId' => $item['ext_ids'],
-        //     'brickLinkExtDesc' => $item['ext_descrs'],
-        //     'LegokExtId' => $item['ext_ids'],
-        //     'LegoExtDesc' => $item['ext_descrs'],
-        // ]);
     }
-    // dd("data stored");
 }
 
+                                // ANOTHER METHOD FETCH DATA FROM API WITH SOME SORT OF SECURITY 
 
     // public function index()
     // {
